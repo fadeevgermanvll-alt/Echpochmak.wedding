@@ -1086,8 +1086,7 @@ function renderThanks(){
       ${!CONFIG.webhookUrl ? `<div class="banner">Демо-режим: этот ответ не был сохранён в таблицу — подключите webhookUrl, чтобы ответы реально доходили до организатора.</div>` : ''}
       ${cal ? `
       <div class="btn-row">
-        <a class="btn" href="${esc(cal.googleUrl)}" target="_blank" rel="noopener">Добавить в Google Calendar</a>
-        <a class="btn secondary" href="${esc(cal.icsHref)}" download="${esc(cal.filename)}">Скачать .ics (Apple/Outlook)</a>
+        <a class="btn" href="${esc(cal.icsHref)}">Добавить в календарь</a>
       </div>
       ` : ''}
       <div class="btn-row">
@@ -1098,11 +1097,12 @@ function renderThanks(){
   `;
 }
 
-/* Ссылки для «Добавить в календарь» на финальном экране: быстрая ссылка
-   на Google Calendar (открывается в новой вкладке с уже заполненным
-   событием) и универсальный файл .ics — его понимают Apple Calendar,
-   Outlook и большинство других календарных приложений, на телефоне
-   обычно сразу открывается диалог «Добавить событие». */
+/* Ссылка «Добавить в календарь» на финальном экране — файл .ics прямо
+   в ссылке (без атрибута download: на iPhone это важно — с download
+   Safari просто скачивает файл, а без него открывает нативный диалог
+   «Добавить событие» в приложении Календарь). Формат .ics стандартный,
+   поэтому та же ссылка нормально работает и в Android/Outlook — просто
+   предложит сохранить или импортировать событие. */
 function icsEscape(s){
   return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
 }
@@ -1119,12 +1119,6 @@ function buildCalendarLinks(){
   const title = `Свадьба ${CONFIG.groomName} и ${CONFIG.brideName}`;
   const location = `${CONFIG.venueName}, ${CONFIG.venueAddress}`;
   const details = `Приглашение на свадьбу. Место: ${location}`;
-
-  const googleUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE'
-    + '&text=' + encodeURIComponent(title)
-    + '&dates=' + startUtc + '/' + endUtc
-    + '&details=' + encodeURIComponent(details)
-    + '&location=' + encodeURIComponent(location);
 
   const icsLines = [
     'BEGIN:VCALENDAR',
@@ -1144,7 +1138,7 @@ function buildCalendarLinks(){
   ];
   const icsHref = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(icsLines.join('\r\n'));
 
-  return { googleUrl, icsHref, filename: 'svadba-' + (CONFIG.groomName || 'w').toLowerCase() + '-' + (CONFIG.brideName || 'd').toLowerCase() + '.ics' };
+  return { icsHref };
 }
 
 function attachSentHandlers(){
