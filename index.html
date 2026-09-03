@@ -663,11 +663,6 @@ const CONFIG = {
   eventDateHuman: "9 октября 2026",
   eventTimeHuman: "16:00",
 
-  // Сколько примерно длится праздник (в часах) — используется только для
-  // кнопки «Добавить в календарь» на финальном экране, чтобы правильно
-  // поставить время окончания события. Поправьте, если знаете точнее.
-  eventDurationHours: 6,
-
   // Место проведения
   venueName: "Perfect Pitch",
   venueAddress: "г. Москва, Берсеневский пер., 5, стр. 2, этаж 2",
@@ -1071,7 +1066,6 @@ function guessEnding(name){
 
 function renderThanks(){
   const isDecline = state.attending === 'no';
-  const cal = isDecline ? null : buildCalendarLinks();
   return `
     <div class="hero" style="padding-top:80px;">
       <div class="kicker">${esc(CONFIG.groomName)} &amp; ${esc(CONFIG.brideName)}</div>
@@ -1084,61 +1078,12 @@ function renderThanks(){
         ? 'Жаль, что не получится увидеться в этот день — спасибо, что предупредили заранее.'
         : 'Мы получили ваш ответ и очень ждём встречи с вами ' + esc(CONFIG.eventDateHuman) + '.'}</p>
       ${!CONFIG.webhookUrl ? `<div class="banner">Демо-режим: этот ответ не был сохранён в таблицу — подключите webhookUrl, чтобы ответы реально доходили до организатора.</div>` : ''}
-      ${cal ? `
-      <div class="btn-row">
-        <a class="btn" href="${esc(cal.icsHref)}">Добавить в календарь</a>
-      </div>
-      ` : ''}
       <div class="btn-row">
         <button class="btn secondary" id="editAgain">Изменить ответ</button>
       </div>
     </section>
     <footer>По всем вопросам — ${esc(CONFIG.contactName)}, ${esc(CONFIG.contactPhone)}</footer>
   `;
-}
-
-/* Ссылка «Добавить в календарь» на финальном экране — файл .ics прямо
-   в ссылке (без атрибута download: на iPhone это важно — с download
-   Safari просто скачивает файл, а без него открывает нативный диалог
-   «Добавить событие» в приложении Календарь). Формат .ics стандартный,
-   поэтому та же ссылка нормально работает и в Android/Outlook — просто
-   предложит сохранить или импортировать событие. */
-function icsEscape(s){
-  return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
-}
-function icsUtcStamp(date){
-  const p = n => String(n).padStart(2, '0');
-  return date.getUTCFullYear() + p(date.getUTCMonth() + 1) + p(date.getUTCDate())
-    + 'T' + p(date.getUTCHours()) + p(date.getUTCMinutes()) + p(date.getUTCSeconds()) + 'Z';
-}
-function buildCalendarLinks(){
-  const start = new Date(CONFIG.eventDateISO);
-  const end = new Date(start.getTime() + (CONFIG.eventDurationHours || 6) * 3600000);
-  const startUtc = icsUtcStamp(start);
-  const endUtc = icsUtcStamp(end);
-  const title = `Свадьба ${CONFIG.groomName} и ${CONFIG.brideName}`;
-  const location = `${CONFIG.venueName}, ${CONFIG.venueAddress}`;
-  const details = `Приглашение на свадьбу. Место: ${location}`;
-
-  const icsLines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Wedding Invite//RU',
-    'CALSCALE:GREGORIAN',
-    'BEGIN:VEVENT',
-    'UID:' + startUtc + '-' + Math.random().toString(36).slice(2, 10) + '@wedding-invite',
-    'DTSTAMP:' + icsUtcStamp(new Date()),
-    'DTSTART:' + startUtc,
-    'DTEND:' + endUtc,
-    'SUMMARY:' + icsEscape(title),
-    'LOCATION:' + icsEscape(location),
-    'DESCRIPTION:' + icsEscape(details),
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ];
-  const icsHref = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(icsLines.join('\r\n'));
-
-  return { icsHref };
 }
 
 function attachSentHandlers(){
