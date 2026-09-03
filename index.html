@@ -1170,10 +1170,11 @@ function attachFormHandlers(){
         if(checked) targetSet.add(value); else targetSet.delete(value);
       }
 
-      // если изменился attending/plusone — нужен полный ререндер, чтобы показать/скрыть блоки
+      // если изменился attending/plusone — просто показываем/скрываем нужные блоки
+      // без полной перерисовки страницы (раньше это перезапускало видео в шапке
+      // и все анимации появления заново, отсюда ощущение "подвисания" при клике)
       if(group === 'attending' || group === 'plusone'){
-        syncStateFromInputs();
-        render();
+        updateAttendingVisibility();
       }
     });
   });
@@ -1212,6 +1213,15 @@ function setupAutoGrowTextareas(scope){
 function syncStateFromInputs(){
   const nameEl = document.getElementById('f-name');
   if(nameEl) state.name = nameEl.value;
+}
+
+function updateAttendingVisibility(){
+  const attendingBlock = document.getElementById('attendingBlock');
+  const declinedNote = document.getElementById('declinedNote');
+  const plusOneBlock = document.getElementById('plusOneBlock');
+  if(attendingBlock) attendingBlock.style.display = state.attending === 'yes' ? 'block' : 'none';
+  if(declinedNote) declinedNote.style.display = state.attending === 'no' ? 'block' : 'none';
+  if(plusOneBlock) plusOneBlock.style.display = (state.plusOne === 'yes' && allowPlusOne) ? 'block' : 'none';
 }
 
 async function onSubmit(e){
